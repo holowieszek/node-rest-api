@@ -1,9 +1,6 @@
 const mongoose = require('mongoose');
 const async = require('async');
 
-const { body, validationResult } = require('express-validator/check');
-const { sanitizeBody } = require('express-validator/filter');
-
 const Author = require('../models/author');
 const Book = require('../models/book');
 
@@ -22,54 +19,35 @@ exports.get_authors = (req, res, next) => {
         })
 };
 
-exports.create_author = [
-    body('first_name', 'First name must not be empty').isLength({ min: 1 }).trim(),
-    body('surname', 'Surname must not be empty').isLength({ min: 1 }).trim(),
-    body('date_of_birth', 'Invalid date of birth').optional({ checkFalsy: true }).isISO8601(),
-    body('date_of_death', 'Invalid date of death').optional({ checkFalsy: true }).isISO8601(),
+exports.create_author = (req, res, next) => {
+    const authorDetails = {
+        first_name: req.body.first_name,
+        surname: req.body.surname,
+        date_of_birth: req.body.date_of_birth,
+        date_of_death: req.body.date_of_death
+    };
 
-    sanitizeBody('first_name').trim().escape(),
-    sanitizeBody('surname').trim().escape(),
-    sanitizeBody('date_of_birth').toDate(),
-    sanitizeBody('date_of_death').toDate(),
-
-
-    (req, res, next) => {
-        const errors = validationResult(req);
-
-        if(!errors.isEmpty()) {
-            return res.status(500).json(errors.array())
-        }
-
-        const authorDetails = {
-            first_name: req.body.first_name,
-            surname: req.body.surname,
-            date_of_birth: req.body.date_of_birth,
-            date_of_death: req.body.date_of_death
-        };
-
-        const author = new Author({
-            _id: new mongoose.Types.ObjectId(),
-            ...authorDetails
-        });
-        
-        author.save()
-            .then(result => {
-                res.status(201).json({
-                    message: 'Author created successfully',
-                    author_details: {
-                        _id: result._id,
-                        ...authorDetails,
-                    }
-                })
+    const author = new Author({
+        _id: new mongoose.Types.ObjectId(),
+        ...authorDetails
+    });
+    
+    author.save()
+        .then(result => {
+            res.status(201).json({
+                message: 'Author created successfully',
+                author_details: {
+                    _id: result._id,
+                    ...authorDetails,
+                }
             })
-            .catch(err => {
-                res.status(500).json({
-                    error: err
-                })
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
             })
-    }
-];
+        })
+}
 
 exports.show_author = (req, res, next) => {
     async.parallel({
@@ -99,8 +77,47 @@ exports.show_author = (req, res, next) => {
 
 exports.update_author = (req, res, next) => {
 
+    const author = new Author({
+        first_name: req.body.first_name,
+        surname: req.body.surname,
+        date_of_birth: req.body.date_of_birth,
+        date_of_death: req.body.date_of_death
+    });
+
+
+    Author.findByIdAndUpdate(req.params.authorId, { $set: author })
+        .exec()
+        .then(result => {
+            res.status(200).json({
+                message: 'Author updated successfully'
+            })
+        })
+        .catch(err => {
+            if(err.kind === "ObjectId") {
+                res.status(500).json({
+                    error: 'Couldn\'t find Object Id: ' + err.value
+                })
+            }
+
+            res.status(500).json({
+                error: err
+            })
+        })
 }
 
 exports.delete_author = (req, res, next) => {
-
+    Author.findByIdAndRemove(req.params.authorId)
+        .exec()
+        .then(result => {
+            res.status(200).json({
+                message: 'Author deleted successfully'
+            })
+        })
+        .catch(err => {
+            if(err.kind === "ObjectId") {
+                res.status(500).json({
+                    error: 'Couldn\'t find Object Id: ' + err.value
+                })
+            }
+        });
 }
