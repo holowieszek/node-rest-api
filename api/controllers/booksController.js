@@ -1,7 +1,5 @@
 const mongoose = require('mongoose');
-
-const { body, validationResult } = require('express-validator/check');
-const { sanitizeBody } = require('express-validator/filter');
+const async = require('async');
 
 const Book = require('../models/book');
 
@@ -21,48 +19,34 @@ exports.get_books = (req, res) => {
         })
 };
 
-exports.create_book = [
-    body('title', 'Title must not be empty').isLength({ min: 1 }).trim(),
-    body('author', 'Author must not be empty').isLength({ min: 1 }).trim(),
-    body('summary', 'Summary must not be empty').isLength({ min: 1 }).trim(),
-    body('type', 'Type must not be empty').isLength({ min: 1 }).trim(),
-
-    sanitizeBody('*').trim().escape(),
-
-    (req, res, next) => {
-        const errors = validationResult(req);
-
-        const bookDetails = {
-            title: req.body.title,
-            author: req.body.author,
-            summary: req.body.summary,
-            type: req.body.type
-        }
-        const book = new Book({
-            _id: new mongoose.Types.ObjectId(),
-            ...bookDetails
-        });
-
-        if(!errors.isEmpty()){
-            res.status(200).json(errors.array());
-        }
-        
-        book.save()
-            .then(result => {
-                res.status(201).json({
-                    message: 'Book created successfully',
-                    book_details: {
-                        ...bookDetails
-                    }
-                })
-            })
-            .catch(err => {
-                res.status(500).json({
-                    error: err
-                })
-            })
+exports.create_book = (req, res, next) => {
+    const bookDetails = {
+        title: req.body.title,
+        author: req.body.author,
+        summary: req.body.summary,
+        type: req.body.type
     }
-]
+
+    const book = new Book({
+        _id: new mongoose.Types.ObjectId(),
+        ...bookDetails
+    });
+    
+    book.save()
+        .then(result => {
+            res.status(201).json({
+                message: 'Book created successfully',
+                book_details: {
+                    ...bookDetails
+                }
+            })
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            })
+        })
+}
 
 exports.show_book = (req, res) => {
     Book.findById(req.params.bookId)
@@ -80,34 +64,45 @@ exports.show_book = (req, res) => {
 };
 
 exports.update_book = (req, res, next) => {
-    const updateParams = [];
-    for(const key of Object.keys(req.body)) {
-        updateParams[key] = req.body[key];
-    }
+    const book = new Book({
+        title: req.body.title,
+        author: req.body.author,
+        summary: req.body.summary,
+        type: req.body.type
+    });
 
-    Book.update({ _id: req.params.bookId }, { $set: updateParams })
+    Book.findByIdAndUpdate(req.params.bookId, { $set: book })
         .exec()
         .then(result => {
             res.status(200).json({
-                message: 'Book updated successfully!',
+                message: 'Book updated successfully!'
             })
         })
         .catch(err => {
-            res.status(500).json(err);
-        })
-};
-
-exports.delete_book = (req, res, next) => {
-    Book.remove({ _id: req.params.bookId })
-        .exec()
-        .then(result => {
-            res.status(200).json({
-                message: 'Book deleted successfully!'
-            })
-        })
-        .catch(err => {
+            if(err.kind === "ObjectId") {
+                res.status(500).json({
+                    error: 'Couldn\'t find Object Id: ' + err.value
+                })
+            }
             res.status(500).json({
                 error: err
             })
+        });
+};
+
+exports.delete_book = (req, res, next) => {
+    Book.findByIdAndRemove(req.params.authorId)
+        .exec()
+        .then(result => {
+            res.status(200).json({
+                message: 'Book deleted successfully'
+            })
         })
+        .catch(err => {
+            if(err.kind === "ObjectId") {
+                res.status(500).json({
+                    error: 'Couldn\'t find Object Id: ' + err.value
+                })
+            }
+        });
 };
