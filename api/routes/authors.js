@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 
 const request = require('../requests/validation/authors');
-
 const authorsController = require('../controllers/authorsController');
 const checkAuth = require('../middleware/checkAuth');
 
