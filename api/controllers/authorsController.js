@@ -6,6 +6,7 @@ const Book = require('../models/book');
 
 exports.get_authors = (req, res, next) => {
     Author.find()
+        .select('_id first_name surname url')
         .exec()
         .then(result => {
             res.status(200).json({
@@ -39,6 +40,7 @@ exports.create_author = (req, res, next) => {
                 author_details: {
                     _id: result._id,
                     ...authorDetails,
+                    url: author.url
                 }
             })
         })
@@ -68,7 +70,7 @@ exports.show_author = (req, res, next) => {
 
         if(results.author === null) {
             res.status(200).json({
-                message: 'Author not found!'
+                message: 'Author not found!',
             })
         }
         res.status(200).json(results)

@@ -7,6 +7,16 @@ const bookSchema = mongoose.Schema({
     summary: { type: String, required: true },
     type: { type: String, required: true },
     bookImage: { type: String, required: true }
+},
+{
+    toObject: { virtuals: true },
+    toJSON: { virtuals: true }
 });
+
+bookSchema
+    .virtual('url')
+    .get(function() {
+        return '/books/' + this._id
+    });
 
 module.exports = mongoose.model('Book', bookSchema);
