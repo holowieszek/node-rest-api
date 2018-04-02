@@ -5,7 +5,7 @@ const Book = require('../models/book');
 
 exports.get_books = (req, res) => {
     Book.find()
-        .select('_id title author summary type')
+        .select('_id title author summary type bookImage')
         .populate('author', '_id first_name surname date_of_birth date_of_death')
         .then(result => {
             res.status(200).json({
@@ -29,6 +29,7 @@ exports.create_book = (req, res, next) => {
 
     const book = new Book({
         _id: new mongoose.Types.ObjectId(),
+        bookImage: req.file.path,
         ...bookDetails
     });
     
@@ -50,7 +51,7 @@ exports.create_book = (req, res, next) => {
 
 exports.show_book = (req, res) => {
     Book.findById(req.params.bookId)
-        .select('_id title author summary type')
+        .select('_id title author summary type bookImage')
         .then(result => {
             res.status(200).json({
                 book: result
