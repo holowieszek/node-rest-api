@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 
 const bookRoutes = require('./api/routes/books');
 const authorRoutes = require('./api/routes/authors');
+const userRoutes = require('./api/routes/users');
 
 mongoose.connect('mongodb://' + process.env.DB_USER + ':' + process.env.DB_PASSWORD + '@ds137464.mlab.com:37464/node-rest-library');
 
@@ -14,6 +15,7 @@ app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+app.use('/users', userRoutes);
 app.use('/books', bookRoutes);
 app.use('/authors', authorRoutes);
 
