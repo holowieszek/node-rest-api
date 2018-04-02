@@ -1,6 +1,8 @@
 const { body, validationResult } = require('express-validator/check');
 const { sanitizeBody } = require('express-validator/filter');
 
+const multer = require('multer');
+
 exports.handler = [
     body('title', 'Title must not be empty').isLength({ min: 1 }).trim(),
     body('author', 'Author must not be empty').isLength({ min: 1 }).trim(),
@@ -19,5 +21,23 @@ exports.handler = [
             })
         }
     }
-]
-    
+];
+
+exports.storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+        const now = new Date().toISOString();
+        const date = now.replace(/:/g, '-');
+        cb(null, date + file.originalname);
+    }
+});
+
+exports.fileFilter = (req, file, cb) => {
+    if(file.mimetype === 'image/png' || file.mimetype === 'image/jpeg') {
+        cb(null, true);
+    } else {
+        cb(null, false);
+    }
+}
